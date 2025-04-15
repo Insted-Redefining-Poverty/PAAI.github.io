@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MPI-PSL Family Data Comparison</title>
+  <title>PAAI</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -66,12 +66,11 @@
             <tbody class="divide-y divide-gray-100">
               {% for attr in ['education','electricity','sanitation','water','housing','assets'] %}
 
-                {% set mpi_color = color_for(result.mpi_attributes[attr]) %}
                 {% set comp_color = color_for(result.comp_attributes[attr]) %}
             
                 <tr>
                     <td class="px-4 py-2 text-gray-800">{{ attr.capitalize() }}</td>
-                    <td class="px-4 py-2 text-gray-800 {{ mpi_color }}">{{ result.mpi_attributes[attr] }}</td>
+                    <td class="px-4 py-2 text-gray-800">{{ result.mpi_attributes[attr] }}</td>
                     <td class="px-4 py-2 text-grey-800 {{ comp_color }}">{{ result.comp_attributes[attr] }}</td>
                 </tr>
               {% endfor %}
@@ -79,7 +78,7 @@
           </table>
         </div>
         <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-2xl font-semibold mb-4">Descriptions</h2>
+          <h2 class="text-2xl font-semibold mb-4">Summary</h2>
           <div class="mb-4">
             <details class="group border border-gray-200 rounded-lg p-4">
               <summary class="cursor-pointer text-lg font-medium text-gray-700">
