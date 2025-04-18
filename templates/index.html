@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PAAI</title>
+  <title>MPI-PSL Family Data Comparison</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -20,26 +20,96 @@
     {%- else -%}
         bg-gray-500
     {%- endif -%}
-{%- endmacro %} 
+{%- endmacro %}
 
 <body class="bg-gray-100">
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-center mb-8">PAAI</h1>
-    
-    <div class="max-w-xl mx-auto bg-white p-6 rounded-lg shadow">
-      <form method="post" class="space-y-4">
-        <div>
-          <label for="key" class="block text-lg font-medium text-gray-700">
-            Enter an MPI Family Key (for example, 10001):
+    <!-- Header: Slider preferences and MPI Key form -->
+    <div class="flex flex-col lg:flex-row justify-between items-start">
+      <!-- Slider Form -->
+      <div class="w-full lg:w-1/2 p-4 bg-white rounded-lg shadow mb-4 lg:mb-0">
+        <h2 class="text-xl font-bold mb-2">Set Slider Preferences</h2>
+        <form id="sliderForm">
+          <label class="block">Number of Families: {{ numFams }}</label>
+
+          <label for="sliderEd" class="block mt-2">
+            Education: <span id="edVal">0</span>
           </label>
-          <input type="text" id="key" name="key" value="{{ key or '' }}" required
-                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+          <input type="range" id="sliderEd" name="sliderEd" min="0" max="3" value="0" oninput="updateEd(this.value)">
+
+          <label for="sliderElec" class="block mt-2">
+            Electricity: <span id="elecVal">0</span>
+          </label>
+          <input type="range" id="sliderElec" name="sliderElec" min="0" max="2" value="0" oninput="updateElec(this.value)">
+
+          <label for="sliderSan" class="block mt-2">
+            Sanitation: <span id="sanVal">0</span>
+          </label>
+          <input type="range" id="sliderSan" name="sliderSan" min="0" max="2" value="0" oninput="updateSan(this.value)">
+
+          <label for="sliderWater" class="block mt-2">
+            Water: <span id="waterVal">0</span>
+          </label>
+          <input type="range" id="sliderWater" name="sliderWater" min="0" max="2" value="0" oninput="updateWater(this.value)">
+
+          <label for="sliderHousing" class="block mt-2">
+            Housing: <span id="housingVal">0</span>
+          </label>
+          <input type="range" id="sliderHousing" name="sliderHousing" min="0" max="3" value="0" oninput="updateHousing(this.value)">
+
+          <label for="sliderAssets" class="block mt-2">
+            Assets: <span id="assetsVal">0</span>
+          </label>
+          <input type="range" id="sliderAssets" name="sliderAssets" min="0" max="2" value="0" oninput="updateAssets(this.value)">
+        </form>
+      </div>
+
+      <!-- MPI Family Key Input -->
+      <div class="w-full lg:w-1/2 p-4 bg-white rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-2">Compare MPI Family</h2>
+        <div class="max-w-xl">
+          <form method="post" class="space-y-4">
+            <div>
+              <label for="key" class="block text-lg font-medium text-gray-700">
+                Enter an MPI Family Key (e.g., 10001):
+              </label>
+              <input
+                type="text"
+                id="key"
+                name="key"
+                value="{{ key or '' }}"
+                required
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              >
+            </div>
+            <button
+              type="submit"
+              class="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition"
+            >
+              Compare
+            </button>
+          </form>
         </div>
-        <button type="submit" class="w-full bg-[#4CA948] text-white py-2 px-4 rounded hover:bg-[#449c42] transition">
-          Compare
-        </button>
-      </form>
+      </div>
     </div>
+
+    <!-- Collapsible Panel for Family Buttons -->
+    <details open class="mt-8">
+      <summary class="bg-blue-500 text-white px-4 py-2 cursor-pointer rounded">
+        Show/Hide Family Buttons
+      </summary>
+      <div id="buttonTable" class="p-4 bg-white rounded-lg shadow mt-4"></div>
+    </details>
+
+    <!-- Attribute Description Display -->
+    {% if result %}
+      <div
+        id="attributeDescription"
+        class="mt-4 p-4 border border-gray-300 rounded bg-gray-50 text-gray-800"
+      >
+        Click on an attribute to see its description.
+      </div>
+    {% endif %}
 
     {% if error %}
       <div class="mt-4 max-w-xl mx-auto">
@@ -65,20 +135,28 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
               {% for attr in ['education','electricity','sanitation','water','housing','assets'] %}
-
-                {% set comp_color = color_for(result.comp_attributes[attr]) %}
-            
                 <tr>
-                    <td class="px-4 py-2 text-gray-800">{{ attr.capitalize() }}</td>
-                    <td class="px-4 py-2 text-gray-800">{{ result.mpi_attributes[attr] }}</td>
-                    <td class="px-4 py-2 text-grey-800 {{ comp_color }}">{{ result.comp_attributes[attr] }}</td>
+                  <td
+                    class="px-4 py-2 text-gray-800 cursor-pointer"
+                    data-mpi-desc="{{ result.mpi_attribute_descriptions[attr]|e }}"
+                    data-psl-desc="{{ result.comp_attribute_descriptions[attr]|e }}"
+                    onclick="showAttributeDescription(this)"
+                  >
+                    {{ attr.capitalize() }}
+                  </td>
+                  <td class="px-4 py-2 text-gray-800">{{ result.mpi_attributes[attr] }}</td>
+                  {% set comp_color = color_for(result.comp_attributes[attr]) %}
+                  <td class="px-4 py-2 text-gray-800 {{ comp_color }}">
+                    {{ result.comp_attributes[attr] }}
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+
         <div class="bg-white p-6 rounded-lg shadow">
-          <h2 class="text-2xl font-semibold mb-4">Summary</h2>
+          <h2 class="text-2xl font-semibold mb-4">Descriptions</h2>
           <div class="mb-4">
             <details class="group border border-gray-200 rounded-lg p-4">
               <summary class="cursor-pointer text-lg font-medium text-gray-700">
@@ -102,6 +180,64 @@
         </div>
       </div>
     {% endif %}
+
+    <!-- JavaScript to update slider values, fetch matching buttons, and display attribute descriptions -->
+    <script>
+      function updateEd(val) {
+          document.getElementById("edVal").innerText = val;
+          fetchButtons();
+      }
+      function updateElec(val) {
+          document.getElementById("elecVal").innerText = val;
+          fetchButtons();
+      }
+      function updateSan(val) {
+          document.getElementById("sanVal").innerText = val;
+          fetchButtons();
+      }
+      function updateWater(val) {
+          document.getElementById("waterVal").innerText = val;
+          fetchButtons();
+      }
+      function updateHousing(val) {
+          document.getElementById("housingVal").innerText = val;
+          fetchButtons();
+      }
+      function updateAssets(val) {
+          document.getElementById("assetsVal").innerText = val;
+          fetchButtons();
+      }
+
+      function fetchButtons() {
+          const ed      = document.getElementById("edVal").innerText;
+          const elec    = document.getElementById("elecVal").innerText;
+          const san     = document.getElementById("sanVal").innerText;
+          const water   = document.getElementById("waterVal").innerText;
+          const housing = document.getElementById("housingVal").innerText;
+          const assets  = document.getElementById("assetsVal").innerText;
+          const params  = new URLSearchParams({ ed, elec, san, water, housing, assets });
+
+          fetch('/update?' + params.toString())
+            .then(r => r.text())
+            .then(html => {
+              document.getElementById("buttonTable").innerHTML = html;
+            })
+            .catch(console.error);
+      }
+
+      function showAttributeDescription(cell) {
+        const name    = cell.innerText;
+        const mpiDesc = cell.getAttribute('data-mpi-desc');
+        const pslDesc = cell.getAttribute('data-psl-desc');
+        document.getElementById('attributeDescription').innerHTML =
+          `<strong>${name} (MPI):</strong> ${mpiDesc}<br/>
+           <strong>${name} (PSL):</strong> ${pslDesc}`;
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        fetchButtons();
+      });
+    </script>
   </div>
 </body>
 </html>
