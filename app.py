@@ -58,7 +58,7 @@ def index():
         result=result,
         error=error,
         key=key,
-        numFams=200
+        numFams=len(mpi_data),
     )
 
 @app.route('/update', methods=['GET'])
@@ -123,4 +123,4 @@ def update():
     return buttons_html
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
